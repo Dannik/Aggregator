@@ -12,7 +12,7 @@
   <servlet>
     <description></description>
     <servlet-name>IndexServlet</servlet-name>
-    <servlet-class>edu.illinois.cs.cs410.IndexServlet</servlet-class>
+    <servlet-class>edu.illinois.cs.cs410.helpers.IndexServlet</servlet-class>
   </servlet>
   <servlet-mapping>
     <servlet-name>IndexServlet</servlet-name>

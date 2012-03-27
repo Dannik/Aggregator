@@ -1,14 +1,17 @@
 package edu.illinois.cs.cs410;
 
 public class Result {
-	private String title, date, link, description;
+	private String title, date, description, image, link, contents;
 
-	public Result(String title, String date, String link, String description) {
+	public Result(String title, String date, String description, String image,
+			String link, String contents) {
 		super();
 		this.title = title;
 		this.date = date;
-		this.link = link;
 		this.description = description;
+		this.image = image;
+		this.link = link;
+		this.contents = contents;
 	}
 
 	public String getTitle() {
@@ -27,6 +30,22 @@ public class Result {
 		this.date = date;
 	}
 
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getImage() {
+		return image;
+	}
+
+	public void setImage(String image) {
+		this.image = image;
+	}
+
 	public String getLink() {
 		return link;
 	}
@@ -35,12 +54,12 @@ public class Result {
 		this.link = link;
 	}
 
-	public String getDescription() {
-		return description;
+	public String getContents() {
+		return contents;
 	}
 
-	public void setDescription(String description) {
-		this.description = description;
+	public void setContents(String contents) {
+		this.contents = contents;
 	}
 
 }
