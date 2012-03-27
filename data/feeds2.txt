@@ -1,0 +1,15 @@
+http://news.yahoo.com/rss/elections
+http://news.yahoo.com/rss/us
+http://news.yahoo.com/rss/education
+http://news.yahoo.com/rss/religion
+http://news.yahoo.com/rss/politics
+http://news.yahoo.com/rss/crime-trials
+http://news.yahoo.com/rss/contributor-network
+http://news.yahoo.com/rss/business
+http://news.yahoo.com/rss/economy
+http://news.yahoo.com/rss/stock-markets
+http://news.yahoo.com/rss/earnings
+http://news.yahoo.com/rss/personal-finance
+http://news.yahoo.com/rss/business-press-releases
+http://news.yahoo.com/rss/taxes
+http://news.yahoo.com/rss/marketplace
