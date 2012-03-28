@@ -19,7 +19,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -31,6 +32,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
 
 import com.sun.syndication.feed.synd.SyndEntry;
 import com.sun.syndication.feed.synd.SyndFeed;
@@ -50,7 +52,6 @@ public class IndexServlet extends HttpServlet {
 	public static final String SPELLCHECK_PATH = DATA_PATH + "spellcheckindex/";
 
 	IndexWriter writer;
-	Analyzer analyzer;
 	Directory dir;
 	PrintWriter w = null;
 
@@ -59,7 +60,10 @@ public class IndexServlet extends HttpServlet {
 
 		try {
 			dir = FSDirectory.open(new File(IndexServlet.INDEX_PATH));
-			writer = new IndexWriter(dir, new PorterAnalyzer(),
+			PerFieldAnalyzerWrapper analyzer = new PerFieldAnalyzerWrapper(new PorterAnalyzer());
+			analyzer.addAnalyzer("contents_pure", new StandardAnalyzer(Version.LUCENE_30));
+
+			writer = new IndexWriter(dir, analyzer,
 					MaxFieldLength.UNLIMITED);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -143,8 +147,7 @@ public class IndexServlet extends HttpServlet {
 					Index.ANALYZED, TermVector.WITH_POSITIONS_OFFSETS));
 			doc.add(new Field("contents", contents, Store.YES, Index.ANALYZED,
 					TermVector.WITH_POSITIONS_OFFSETS));
-			doc.add(new Field("contents_pure", contents, Store.YES, Index.NOT_ANALYZED,
-					TermVector.WITH_POSITIONS_OFFSETS));
+			doc.add(new Field("contents_pure", contents, Store.YES, Index.ANALYZED));
 			doc.add(new Field("date", date, Store.YES, Index.NOT_ANALYZED));
 			doc.add(new Field("link", link, Store.YES, Index.NOT_ANALYZED));
 			doc.add(new Field("image", image, Store.YES, Index.NOT_ANALYZED));

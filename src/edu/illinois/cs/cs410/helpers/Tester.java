@@ -1,47 +1,117 @@
 package edu.illinois.cs.cs410.helpers;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Iterator;
-import java.util.List;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 
-import org.apache.lucene.analysis.StopAnalyzer;
-import org.apache.lucene.document.DateTools;
+import javax.print.Doc;
+
 import org.apache.lucene.document.Field;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
-import org.apache.lucene.document.Field.TermVector;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.Term;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.spell.LevensteinDistance;
-import org.apache.lucene.search.spell.LuceneDictionary;
 import org.apache.lucene.search.spell.SpellChecker;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.jdom.Document;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
+import org.apache.lucene.util.Version;
 
-import com.sun.syndication.feed.synd.SyndEntry;
-import com.sun.syndication.feed.synd.SyndFeed;
-import com.sun.syndication.io.SyndFeedInput;
-import com.sun.syndication.io.XmlReader;
+import org.apache.commons.codec.language.*;
+
+import edu.illinois.cs.cs410.analysis.PorterAnalyzer;
 
 public class Tester {
-	public static void main(String[] args) throws Exception {
+
+	public static String getCorrection(String wordToRespell) throws Exception {
 		String spellCheckDir = "data/spellcheckindex";
-		String wordToRespell = "mony";
 		Directory dir = FSDirectory.open(new File(spellCheckDir));
-		System.out.println(dir);
 		SpellChecker spell = new SpellChecker(dir);
-		spell.setStringDistance(new LevensteinDistance());
-		// spell.setStringDistance(new JaroWinklerDistance());
-		String[] suggestions = spell.suggestSimilar(wordToRespell, 5);
-		System.out.println(suggestions.length + " suggestions for '"
-				+ wordToRespell + "':");
-		for (int i = 0; i < suggestions.length; i++)
-			System.out.println(" " + suggestions[i]);
+
+		wordToRespell = wordToRespell.toLowerCase();
+		if (spell.exist(wordToRespell))
+			return wordToRespell;
+
+		LevensteinDistance dist = new LevensteinDistance();
+		spell.setStringDistance(dist);
+
+		String[] suggestions = spell.suggestSimilar(wordToRespell, 10);
+
+		if (suggestions.length < 1)
+			return "";
+
+		RefinedSoundex soundex = new RefinedSoundex();
+		String snd1 = soundex.soundex(wordToRespell);
+
+		String best = suggestions[0];
+		double best_score = dist.getDistance(snd1, soundex.soundex(best));
+
+		System.out.println("Suggestions for : " + wordToRespell + "(" + snd1
+				+ ")");
+
+		String snd2 = soundex.soundex(suggestions[0]);
+		System.out.println("  " + suggestions[0] + "(" + snd2 + ")");
+		for (int i = 1; i < suggestions.length; i++) {
+			snd2 = soundex.soundex(suggestions[i]);
+			System.out.println("  " + suggestions[i] + "(" + snd2 + ")");
+
+			double tmp = dist.getDistance(snd1, snd2);
+			if (tmp > best_score) {
+				best_score = tmp;
+				best = suggestions[i];
+			}
+		}
+
+		dir.close();
+		spell.close();
+
+		return best;
+	}
+
+	public static void indexDictionary() {
+		try {
+			FileInputStream fstream = new FileInputStream(
+					"/usr/share/dict/words");
+			DataInputStream in = new DataInputStream(fstream);
+			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			String strLine;
+
+			Directory dir = FSDirectory.open(new File("data/dictionaryindex"));
+			Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_30);
+			IndexWriter writer = new IndexWriter(dir, analyzer, MaxFieldLength.UNLIMITED);
+
+			int i = 0;
+
+			while ((strLine = br.readLine()) != null) {
+				Document doc = new Document();
+				doc.add(new Field("word", strLine, Store.YES, Index.ANALYZED));
+				writer.addDocument(doc);
+				++i;
+				if (i % 1000 == 0)
+					System.out.println(i);
+			}
+			writer.commit();
+
+			System.out.println("Added " + i + "words!");
+
+			in.close();
+			writer.close();
+			dir.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) throws Exception {
+		String[] strs = new String[] { "lieks", "monee" };
+		for (String str : strs) {
+			System.out.println(getCorrection(str));
+		}
 	}
 }
