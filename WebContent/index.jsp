@@ -39,7 +39,7 @@ Results: ${resultsNum}<br />
 		<c:forEach var="result" items="${results.results}">
 			<br />
 			<br />
-			<b>${result.title}</b>
+			<b>${result.title} (<a href="?like=${result.id}">more like this</a>)</b>
 			<br />
 ${result.date}<br />
 			<a href="${result.link}">link</a>

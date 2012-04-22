@@ -1,1 +1,4 @@
 http://news.yahoo.com/rss/elections
+http://news.yahoo.com/rss/us
+http://news.yahoo.com/rss/education
+http://news.yahoo.com/rss/religion

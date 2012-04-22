@@ -1,11 +1,13 @@
 package edu.illinois.cs.cs410;
 
+//Each page, returned to the browser
 public class Result {
-	private String title, date, description, image, link, contents;
+	private String id, title, date, description, image, link, contents;
 
-	public Result(String title, String date, String description, String image,
+	public Result(String id, String title, String date, String description, String image,
 			String link, String contents) {
 		super();
+		this.id = id;
 		this.title = title;
 		this.date = date;
 		this.description = description;
@@ -13,6 +15,17 @@ public class Result {
 		this.link = link;
 		this.contents = contents;
 	}
+
+
+	public String getId() {
+		return id;
+	}
+
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
 
 	public String getTitle() {
 		return title;
@@ -61,5 +74,4 @@ public class Result {
 	public void setContents(String contents) {
 		this.contents = contents;
 	}
-
 }

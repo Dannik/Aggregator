@@ -2,6 +2,7 @@ package edu.illinois.cs.cs410;
 
 import java.util.List;
 
+//List of all pages returned to the browser
 public class SearchResultsBean {
 	private List<Result> results;
 

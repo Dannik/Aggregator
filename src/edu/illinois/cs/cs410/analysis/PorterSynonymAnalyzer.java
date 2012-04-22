@@ -8,7 +8,6 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.PorterStemFilter;
-import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardFilter;
@@ -19,11 +18,12 @@ public class PorterSynonymAnalyzer extends Analyzer {
 	private Set<?> stopSet;
 
 	public PorterSynonymAnalyzer() {
-		stopSet = StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+		stopSet = StopWords.stopWords;
 	}
 
 	public PorterSynonymAnalyzer(String[] stopWords) {
-		stopSet = StopFilter.makeStopSet(stopWords);
+		// stopSet = StopFilter.makeStopSet(stopWords);
+		stopSet = StopWords.stopWords;
 	}
 
 	public TokenStream tokenStream(String fieldName, Reader reader) {
@@ -31,7 +31,8 @@ public class PorterSynonymAnalyzer extends Analyzer {
 		result = new StandardFilter(result);
 		result = new LowerCaseFilter(result);
 		try {
-			result = new SynonymFilter(result, new WordNetSynonymEngine(new File("data/wordnetindex")));
+			result = new SynonymFilter(result, new WordNetSynonymEngine(
+					new File("data/wordnetindex")));
 		} catch (IOException e) {
 
 		}

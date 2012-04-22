@@ -6,7 +6,6 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.PorterStemFilter;
-import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardFilter;
@@ -17,11 +16,12 @@ public class PorterAnalyzer extends Analyzer {
 	private Set<?> stopSet;
 
 	public PorterAnalyzer() {
-		stopSet = StopAnalyzer.ENGLISH_STOP_WORDS_SET;
+		stopSet = StopWords.stopWords;
 	}
 
 	public PorterAnalyzer(String[] stopWords) {
-		stopSet = StopFilter.makeStopSet(stopWords);
+		//stopSet = StopFilter.makeStopSet(stopWords);
+		stopSet = StopWords.stopWords;
 	}
 
 	public TokenStream tokenStream(String fieldName, Reader reader) {
