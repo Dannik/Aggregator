@@ -4,10 +4,10 @@
 <html>
 
 <script>
-function fixQuery(q) {
-	document.getElementById('query').value = q;
-	document.forms["mainForm"].submit();
-}
+	function fixQuery(q) {
+		document.getElementById('query').value = q;
+		document.forms["mainForm"].submit();
+	}
 </script>
 
 <style>
@@ -23,23 +23,31 @@ function fixQuery(q) {
 <body>
 	<form name="mainForm" id="mainForm" action="SearchServlet" method="get">
 		<input type="text" name="query" id="query" /><br /> Synonymize: <input
-			type="checkbox" name="isSynonym" id="isSynonym" /><br /> <input type="submit" />
+			type="checkbox" name="isSynonym" id="isSynonym" /><br /> <input
+			type="submit" />
 	</form>
 	<c:if test="${misspelled}">
 			Did you mean:
 			<a onclick="fixQuery('${newQuery}')" href="javascript:void(0);">
-				<c:out value="${newQuery}" /><br />
-			</a>
+			<c:out value="${newQuery}" /><br />
+		</a>
 	</c:if>
 	<c:if test="${not empty results.results}">
 Query: ${query} <br />
 		<br />
 
 Results: ${resultsNum}<br />
-		<c:forEach var="result" items="${results.results}">
+
+		<c:forEach var="cluster" varStatus="status" items="${results.clusters}">
+			<b>Topic <c:out value="${status.count - 1}" />: <c:out value="${cluster}" /></b><br />
+		</c:forEach>
+
+		<c:forEach var="result" varStatus="status" items="${results.results}">
 			<br />
 			<br />
-			<b>${result.title} (<a href="?like=${result.id}">more like this</a>)</b>
+			<b>[<c:out value="${results.docToCluster[status.count]}" />] ${result.title} (<a href="?like=${result.id}">more like
+					this</a>)
+			</b>
 			<br />
 ${result.date}<br />
 			<a href="${result.link}">link</a>

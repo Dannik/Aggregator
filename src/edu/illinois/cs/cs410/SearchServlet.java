@@ -37,6 +37,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
+import com.aliasi.symbol.SymbolTable;
+
 import edu.illinois.cs.cs410.analysis.AnalyzerUtils;
 import edu.illinois.cs.cs410.analysis.PorterAnalyzer;
 import edu.illinois.cs.cs410.analysis.PorterSynonymAnalyzer;
@@ -245,9 +247,13 @@ public class SearchServlet extends HttpServlet {
 		searcher.search(query, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
+		Document[] docs = new Document[hits.length];
+
 		for (int i = 0; i < hits.length; ++i) {
 			int docId = hits[i].doc;
 			Document d = searcher.doc(docId);
+
+			docs[i] = d;
 
 			try {
 				list.add(new Result(d.get("id"), d.get("title"),
@@ -264,9 +270,15 @@ public class SearchServlet extends HttpServlet {
 		searcher.close();
 		dir.close();
 
+		LDAClusterer.LDAClusterData data = LDAClusterer.LDA(docs, 5, "description", 5);
+
 		results.setResults(list);
+		results.setClusters(data.clusterWords);
+		results.setDocToCluster(data.clusterIDs);
+
 		request.setAttribute("results", results);
 		request.setAttribute("resultsNum", hits.length);
+
 		request.getRequestDispatcher("/index.jsp").forward(request, response);
 	}
 }
