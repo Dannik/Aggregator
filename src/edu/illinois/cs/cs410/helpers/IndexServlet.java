@@ -9,9 +9,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.ServletConfig;
@@ -22,7 +25,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.lucene.analysis.PerFieldAnalyzerWrapper;
-import org.apache.lucene.analysis.StopAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.Document;
@@ -35,6 +37,8 @@ import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
+import org.joda.time.DateTime;
+import org.joda.time.Days;
 
 import com.sun.syndication.feed.synd.SyndEntry;
 import com.sun.syndication.feed.synd.SyndFeed;
@@ -55,6 +59,8 @@ public class IndexServlet extends HttpServlet {
 	public static final String SPELLCHECK_PATH = DATA_PATH + "spellcheckindex/";
 
 	Set<String> alreadyIndexed = new HashSet<String>();
+
+	public static Map<Integer, Integer> docToAge = new HashMap<Integer, Integer>();
 
 	IndexWriter writer;
 	Directory dir;
@@ -121,7 +127,8 @@ public class IndexServlet extends HttpServlet {
 			SyndEntry entry = (SyndEntry) it.next();
 			String title = entry.getTitle().replaceAll(aRegex, "'")
 					.replaceAll(qRegex, "\"").replaceAll("—", "-");
-			String date = DateTools.dateToString(entry.getPublishedDate(),
+			Date dt = entry.getPublishedDate();
+			String date = DateTools.dateToString(dt,
 					DateTools.Resolution.DAY);
 			String link = entry.getLink();
 			String description = entry.getDescription().getValue()
@@ -175,7 +182,11 @@ public class IndexServlet extends HttpServlet {
 				writer.addDocument(doc);
 				alreadyIndexed.add(title);
 
+				int age = Days.daysBetween(new DateTime(new Date()), new DateTime(dt)).getDays();
+				docToAge.put(numDocs, age);
+
 				this.numDocs++;
+
 			} catch (Exception e) {
 				if (w != null)
 					w.println("Couldn't update index during parsing");
