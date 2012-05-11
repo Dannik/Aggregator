@@ -1,0 +1,69 @@
+body {
+    line-height: 1.5em;
+    margin: 0;
+    padding: 0;
+}
+#maincontainer {
+    margin: 0 auto;
+    width: 1310px;
+}
+#topsection {
+    background: none repeat scroll 0 0 #EAEAEA;
+    height: 90px;
+}
+#topsection h1 {
+    margin: 0;
+    padding-top: 15px;
+}
+#contentwrapper {
+    float: left;
+    width: 100%;
+}
+#contentcolumn {
+    margin-left: 300px;
+}
+#leftcolumn {
+    background: none repeat scroll 0 0 #C8FC98;
+    float: left;
+    margin-left: -1310px;
+    width: 300px;
+}
+#footer {
+    background: none repeat scroll 0 0 black;
+    clear: left;
+    color: #FFFFFF;
+    padding: 4px 0;
+    text-align: center;
+    width: 100%;
+}
+#footer a {
+    color: #FFFF80;
+}
+.innertube {
+    margin: 0 10px 10px;
+}
+.highlight {
+    background: none repeat scroll 0 0 yellow;
+}
+#query {
+    width: 400px;
+}
+.date {
+    font-style: italic;
+}
+.contents {
+    font-size: 12px;
+}
+.date {
+    font-size: 12px;
+}
+.contents {
+    height: 55px;
+    display: block;
+}
+#mainForm {
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 10px;
+    width: 50%;
+}
