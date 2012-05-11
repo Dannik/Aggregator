@@ -37,8 +37,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 
-import com.aliasi.symbol.SymbolTable;
-
 import edu.illinois.cs.cs410.analysis.AnalyzerUtils;
 import edu.illinois.cs.cs410.analysis.PorterAnalyzer;
 import edu.illinois.cs.cs410.analysis.PorterSynonymAnalyzer;
@@ -46,6 +44,7 @@ import edu.illinois.cs.cs410.analysis.StopWords;
 import edu.illinois.cs.cs410.analysis.SynonymAnalyzer;
 import edu.illinois.cs.cs410.analysis.WordNetSynonymEngine;
 import edu.illinois.cs.cs410.helpers.IndexServlet;
+import edu.illinois.cs.cs410.helpers.RecencyBoostingQuery;
 
 @WebServlet("/SearchServlet")
 public class SearchServlet extends HttpServlet {
@@ -126,18 +125,18 @@ public class SearchServlet extends HttpServlet {
 		IndexSearcher searcher = new IndexSearcher(reader);
 
 		MoreLikeThis mlt = new MoreLikeThis(reader);
-		mlt.setFieldNames(new String[] { "title" });
+		mlt.setFieldNames(new String[] { "title"});
 		mlt.setMinTermFreq(1);
 		mlt.setMinDocFreq(1);
 
 		Query query = mlt.like(docID);
-		TopDocs hits = searcher.search(query, 10);
+		TopDocs hits = searcher.search(query, 100);
 
-		System.out.println(docID);
+		// System.out.println(docID);
 
 		Document[] docs = new Document[hits.scoreDocs.length];
 		for (int i = 0; i < hits.scoreDocs.length; i++) {
-			System.out.println("- " + hits.scoreDocs[i].doc);
+			// System.out.println("- " + hits.scoreDocs[i].doc);
 			docs[i] = reader.document(hits.scoreDocs[i].doc);
 		}
 
@@ -164,10 +163,22 @@ public class SearchServlet extends HttpServlet {
 									.get("description"), d.get("image"), d
 									.get("link"), d.get("description")));
 				}
+
+				int numTopics = Math.max(1, docs.length / 5);
+				int numWords = 5;
+				String field = "title";
+
+				if (docs.length > 0) {
+					LDAClusterer.LDAClusterData data = LDAClusterer.LDA(docs,
+							numTopics, field, numWords);
+					results.setClusters(data.clusterWords);
+					results.setDocToCluster(data.clusterIDs);
+				}
+
 				results.setResults(list);
 				request.setAttribute("results", results);
 				request.setAttribute("resultsNum", docs.length);
-				request.getRequestDispatcher("/index.jsp").forward(request,
+				request.getRequestDispatcher("/index2.jsp").forward(request,
 						response);
 				return;
 			}
@@ -178,10 +189,11 @@ public class SearchServlet extends HttpServlet {
 
 		String queryStr = request.getParameter("query");
 		boolean isSynonym = request.getParameter("isSynonym") != null;
+		boolean isCluster = request.getParameter("isCluster") != null;
 
 		if (queryStr == null || queryStr.trim().length() < 1) {
 			request.setAttribute("query", "");
-			request.getRequestDispatcher("/index.jsp").forward(request,
+			request.getRequestDispatcher("/index2.jsp").forward(request,
 					response);
 			return;
 		}
@@ -230,7 +242,7 @@ public class SearchServlet extends HttpServlet {
 			query = new MultiFieldQueryParser(Version.LUCENE_30, new String[] {
 					"title", "contents" }, analyzer).parse(queryStr);
 		} catch (ParseException e) {
-			request.getRequestDispatcher("/index.jsp").forward(request,
+			request.getRequestDispatcher("/index2.jsp").forward(request,
 					response);
 			return;
 		}
@@ -241,27 +253,58 @@ public class SearchServlet extends HttpServlet {
 		Directory dir = FSDirectory.open(new File(IndexServlet.INDEX_PATH));
 		IndexSearcher searcher = new IndexSearcher(IndexReader.open(dir));
 
-		int hitsPerPage = 50;
+		int hitsPerPage = 100;
 		TopScoreDocCollector collector = TopScoreDocCollector.create(
 				hitsPerPage, true);
 		searcher.search(query, collector);
 		ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
-		Document[] docs = new Document[hits.length];
+		ArrayList<Document> docs = new ArrayList<Document>();
 
 		for (int i = 0; i < hits.length; ++i) {
 			int docId = hits[i].doc;
 			Document d = searcher.doc(docId);
+			docs.add(d);
+		}
 
-			docs[i] = d;
+		ArrayList<Document> clustered = new ArrayList<Document>();
+		if (isCluster) {
+			for (int i = 0; i < docs.size(); i++) {
+				boolean has = false;
+
+				for (Document d : moreLikeThis(hits[i].doc)) {
+					has = false;
+					for (Document tmp : docs)
+						if (tmp.get("id").equals(d.get("id")))
+							has = true;
+					for (Document tmp : clustered)
+						if (tmp.get("id").equals(d.get("id")))
+							has = true;
+					if (!has) {
+						clustered.add(d);
+					}
+				}
+			}
+
+			for (Document d : clustered)
+				docs.add(d);
+		}
+
+		for (int i = 0; i < docs.size(); i++) {
+			Document d = docs.get(i);
+			String contents;
+			if (docs.size() - i <= clustered.size())
+				contents = d.get("description");
+			else
+				contents = getHighlightedText(query, "contents", d.get("contents"));
 
 			try {
+
 				list.add(new Result(d.get("id"), d.get("title"),
 						new SimpleDateFormat("MMMM d, yyyy").format(DateTools
 								.stringToDate(d.get("date"))), d
 								.get("description"), d.get("image"), d
-								.get("link"), getHighlightedText(query,
-								"contents", d.get("contents"))));
+								.get("link"), contents));
 			} catch (java.text.ParseException e) {
 				continue;
 			}
@@ -270,15 +313,22 @@ public class SearchServlet extends HttpServlet {
 		searcher.close();
 		dir.close();
 
-		LDAClusterer.LDAClusterData data = LDAClusterer.LDA(docs, 5, "description", 5);
+		int numTopics = Math.max(1, docs.size() / 5);
+		int numWords = 5;
+		String field = "title";
 
+		if (docs.size() > 0) {
+			LDAClusterer.LDAClusterData data = LDAClusterer
+					.LDA(docs.toArray(new Document[] {}), numTopics, field,
+							numWords);
+			results.setClusters(data.clusterWords);
+			results.setDocToCluster(data.clusterIDs);
+		}
 		results.setResults(list);
-		results.setClusters(data.clusterWords);
-		results.setDocToCluster(data.clusterIDs);
 
 		request.setAttribute("results", results);
-		request.setAttribute("resultsNum", hits.length);
+		request.setAttribute("resultsNum", docs.size());
 
-		request.getRequestDispatcher("/index.jsp").forward(request, response);
+		request.getRequestDispatcher("/index2.jsp").forward(request, response);
 	}
 }
